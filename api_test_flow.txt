@@ -1,0 +1,271 @@
+ACCOUNTSAPP ENDPOINTS TEST FLOW
+
+Base URL:
+http://127.0.0.1:8000
+
+ENVIRONMENT:
+- Authorization header for protected endpoints: Bearer <access_token>
+- Content-Type: application/json
+
+1. REGISTER USER
+POST /api/accounts/register/
+Request Body:
+{
+  "email": "user1@example.com",
+  "username": "user1",
+  "first_name": "User",
+  "last_name": "One",
+  "password": "StrongPass123",
+  "password2": "StrongPass123"
+}
+Expected Response 201:
+{
+  "message": "User registered successfully",
+  "user": {
+    "id": 1,
+    "email": "user1@example.com",
+    "username": "user1",
+    "first_name": "User",
+    "last_name": "One"
+  }
+}
+
+2. LOGIN USER
+POST /api/accounts/login/
+Request Body:
+{
+  "email": "user1@example.com",
+  "password": "StrongPass123"
+}
+Expected Response 200:
+{
+  "message": "Login successful",
+  "access_token": "<ACCESS_TOKEN>",
+  "refresh_token": "<REFRESH_TOKEN>",
+  "user": {
+    "id": 1,
+    "email": "user1@example.com",
+    "username": "user1",
+    "first_name": "User",
+    "last_name": "One",
+    "is_online": true
+  }
+}
+
+3. GET PROFILE
+GET /api/accounts/profile/
+Headers:
+Authorization: Bearer <ACCESS_TOKEN>
+Expected Response 200:
+{
+  "id": 1,
+  "email": "user1@example.com",
+  "username": "user1",
+  "first_name": "User",
+  "last_name": "One",
+  "profile_picture": null,
+  "bio": null,
+  "is_online": true,
+  "last_seen": null,
+  "phone": null
+}
+
+4. UPDATE PROFILE
+PATCH /api/accounts/profile/
+Headers:
+Authorization: Bearer <ACCESS_TOKEN>
+Request Body:
+{
+  "first_name": "UserNew",
+  "bio": "Hello from Postman"
+}
+Expected Response 200:
+{
+  "message": "Profile updated successfully",
+  "user": {
+    "id": 1,
+    "email": "user1@example.com",
+    "username": "user1",
+    "first_name": "UserNew",
+    "last_name": "One",
+    "profile_picture": null,
+    "bio": "Hello from Postman",
+    "is_online": true,
+    "last_seen": null,
+    "phone": null
+  }
+}
+
+5. REFRESH TOKEN
+POST /api/accounts/token/refresh/
+Request Body:
+{
+  "refresh": "<REFRESH_TOKEN>"
+}
+Expected Response 200:
+{
+  "access": "<NEW_ACCESS_TOKEN>"
+}
+
+6. LOGOUT
+POST /api/accounts/logout/
+Headers:
+Authorization: Bearer <ACCESS_TOKEN>
+Request Body:
+{
+  "refresh": "<REFRESH_TOKEN>"
+}
+Expected Response 200:
+{
+  "message": "Logout successful"
+}
+
+
+CHATAPP ENDPOINTS TEST FLOW
+
+NOTE: chatapp endpoints require a valid access token in Authorization header.
+
+1. CREATE SECOND USER (for conversation)
+Repeat register and login steps with user2@example.com.
+
+2. CREATE ONE-TO-ONE CONVERSATION
+POST /api/chat/conversations/
+Headers:
+Authorization: Bearer <ACCESS_TOKEN>
+Request Body:
+{
+  "is_group": false,
+  "participant_id": 2
+}
+Expected Response 200/201:
+{
+  "id": 1,
+  "name": null,
+  "is_group": false,
+  "participants": [ ... ],
+  "created_by": 1,
+  "last_message": null,
+  "unread_count": 0,
+  "participant_count": 2,
+  "is_admin": false,
+  "created_at": "2026-05-20T..."
+}
+
+3. LIST CONVERSATIONS
+GET /api/chat/conversations/
+Headers:
+Authorization: Bearer <ACCESS_TOKEN>
+Expected Response 200:
+[
+  {
+    "id": 1,
+    "name": null,
+    "is_group": false,
+    "participants": [ ... ],
+    "created_by": 1,
+    "last_message": null,
+    "unread_count": 0,
+    "participant_count": 2,
+    "is_admin": false,
+    "created_at": "2026-05-20T..."
+  }
+]
+
+4. GET CONVERSATION DETAIL
+GET /api/chat/conversations/1/
+Headers:
+Authorization: Bearer <ACCESS_TOKEN>
+Expected Response 200:
+{
+  "id": 1,
+  "name": null,
+  "is_group": false,
+  "participants": [ ... ],
+  "created_by": 1,
+  "last_message": null,
+  "unread_count": 0,
+  "participant_count": 2,
+  "is_admin": false,
+  "created_at": "2026-05-20T..."
+}
+
+5. SEND MESSAGE
+POST /api/chat/conversations/1/messages/
+Headers:
+Authorization: Bearer <ACCESS_TOKEN>
+Request Body:
+{
+  "content": "Hello, how are you?"
+}
+Expected Response 201:
+{
+  "id": 1,
+  "conversation": 1,
+  "sender": 1,
+  "sender_email": "user1@example.com",
+  "content": "Hello, how are you?",
+  "is_read": false,
+  "created_at": "2026-05-20T..."
+}
+
+6. LIST MESSAGES
+GET /api/chat/conversations/1/messages/
+Headers:
+Authorization: Bearer <ACCESS_TOKEN>
+Expected Response 200:
+[
+  {
+    "id": 1,
+    "conversation": 1,
+    "sender": 1,
+    "sender_email": "user1@example.com",
+    "content": "Hello, how are you?",
+    "is_read": false,
+    "created_at": "2026-05-20T..."
+  }
+]
+
+7. MARK MESSAGES AS READ
+POST /api/chat/conversations/1/read/
+Headers:
+Authorization: Bearer <ACCESS_TOKEN>
+Request Body: {}
+Expected Response 200:
+{
+  "message": "Messages marked as read",
+  "updated_count": 1
+}
+
+8. CREATE GROUP CONVERSATION
+POST /api/chat/conversations/
+Headers:
+Authorization: Bearer <ACCESS_TOKEN>
+Request Body:
+{
+  "is_group": true,
+  "name": "Study Group",
+  "participant_ids": [2]
+}
+Expected Response 200/201:
+{
+  "id": 2,
+  "name": "Study Group",
+  "is_group": true,
+  "participants": [ ... ],
+  "created_by": 1,
+  "last_message": null,
+  "unread_count": 0,
+  "participant_count": 2,
+  "is_admin": false,
+  "created_at": "2026-05-20T..."
+}
+
+9. OPTIONAL: ADD OR REMOVE PARTICIPANT
+If you have group admin logic and routes, use the group endpoint if implemented.
+
+
+NOTES:
+- Always use the current valid access token for protected endpoints.
+- If the access token expires, refresh it using /api/accounts/token/refresh/.
+- If the endpoint returns 401, re-login and use the new token.
+- If you get validation errors, check required fields for request body.
