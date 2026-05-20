@@ -4,7 +4,7 @@ from rest_framework import generics, permissions, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import PermissionDenied
 
-from my_project.accountsapp.models import CustomUser
+from accountsapp.models import CustomUser
 from .serializers import MessageSerializer
 from rest_framework.response import Response
 

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from accountsapp.serializers import UserProfileSerializer
-from my_project.accountsapp.models import CustomUser
+from accountsapp.models import CustomUser
 from .models import Conversation, Message
 
 
@@ -57,6 +57,8 @@ class ConversationSerializer(serializers.ModelSerializer):
             'created_by',
             'last_message',
             'unread_count',
+            'participant_count',
+            'is_admin',
             'created_at'
         ]
 
@@ -81,7 +83,18 @@ class ConversationSerializer(serializers.ModelSerializer):
             sender=user
         ).count()
         
-        
+    def get_participant_count(self, obj):
+        return obj.participants.count()
+
+    def get_is_admin(self, obj):
+        request = self.context.get('request')
+        user = request.user
+        return obj.conversationparticipant_set.filter(
+            user=user,
+            is_admin=True
+        ).exists()
+
+
 class CreateConversationSerializer(serializers.Serializer):
 
     participant_id = serializers.IntegerField(
@@ -171,3 +184,35 @@ class CreateConversationSerializer(serializers.Serializer):
                 )
 
         return attrs
+
+    def create(self, validated_data):
+        request = self.context.get('request')
+        current_user = request.user
+        is_group = validated_data.get('is_group')
+
+        # Create one-to-one conversation
+        if not is_group:
+            participant_id = validated_data.get('participant_id')
+            participant = CustomUser.objects.get(id=participant_id)
+
+            conversation = Conversation.objects.create(
+                is_group=False,
+                created_by=current_user
+            )
+            conversation.participants.add(current_user, participant)
+
+        # Create group conversation
+        else:
+            name = validated_data.get('name')
+            participant_ids = validated_data.get('participant_ids')
+
+            conversation = Conversation.objects.create(
+                is_group=True,
+                name=name,
+                created_by=current_user
+            )
+            # Add current user + all participants
+            conversation.participants.add(current_user)
+            conversation.participants.add(*CustomUser.objects.filter(id__in=participant_ids))
+
+        return conversation
